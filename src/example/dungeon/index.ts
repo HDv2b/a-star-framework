@@ -1,4 +1,4 @@
-import AStar from "../index";
+import AStar from "../../index";
 
 type Grid = number[][]
 

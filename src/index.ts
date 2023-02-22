@@ -49,10 +49,6 @@ export default abstract class AStar<N> {
     // doc note: if H is of a different unit to F (eg distance vs time) then there will be trouble!
     abstract calculateH(currentNode: N): number
 
-    private _findNodeInClosedList(node: N) {
-        return this._closedList.find(closedNode => this.nodesMatch(closedNode.node, node))
-    }
-
     private _nodeIsNotInClosedList(node: N): boolean {
         return this._closedList.findIndex(closedNode => this.nodesMatch(closedNode.node, node)) === -1
     }
