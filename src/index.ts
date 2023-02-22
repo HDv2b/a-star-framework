@@ -61,13 +61,16 @@ export default abstract class AStar<N> {
         return this._openList.find(openNode => this.nodesMatch(openNode.node, node))
     }
 
-    solve(startNode: N, goalNode: ((node: N) => boolean) | N) {
+    solve(startNode: N, goalNodeObjOrFnc: ((node: N) => boolean) | N) {
         this._openList = [];
         this._closedList = [];
 
-        const goalNodeCheck = typeof goalNode === 'function'
-            ? (node: N) => goalNode(node)
-            : (node: N) => this.nodesMatch(node, goalNode);
+        const isFn = (a: unknown): a is Function =>
+            typeof a === 'function';
+
+        const goalNodeCheck = isFn(goalNodeObjOrFnc)
+            ? (node: N) => goalNodeObjOrFnc(node)
+            : (node: N) => this.nodesMatch(node, goalNodeObjOrFnc);
 
         /**
          *  put the starting node on the open list (you can leave its f at zero)
