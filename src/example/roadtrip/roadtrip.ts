@@ -7,7 +7,7 @@ interface JunctionWithoutConnection {
 }
 
 interface Connection {
-    ids: [number, number]
+    ids: readonly [number, number]
     time: number,
 }
 
@@ -17,11 +17,11 @@ interface Junction {
     lng: number,
     connections: {
         otherId: number,
-        time: number
+        time: number,
     }[]
 }
 
-const junctionsWithoutConnection: JunctionWithoutConnection[] = [
+const junctionsWithoutConnection: ReadonlyArray<JunctionWithoutConnection> = [
     {id: 1, lat: 50, lng: 250},
     {id: 2, lat: 150, lng: 300},
     {id: 3, lat: 300, lng: 400},
@@ -32,9 +32,9 @@ const junctionsWithoutConnection: JunctionWithoutConnection[] = [
     {id: 8, lat: 470, lng: 470},
     {id: 9, lat: 170, lng: 420},
     {id: 10, lat: 250, lng: 260},
-];
+] as const;
 
-const roads: Connection[] = [
+const roads: ReadonlyArray<Connection> = [
     { ids: [1, 2], time: 0},
     { ids: [2, 3], time: 0},
     { ids: [3, 4], time: 0},
@@ -48,7 +48,7 @@ const roads: Connection[] = [
     { ids: [10, 8], time: 450},
     { ids: [8, 4], time: 100},
     { ids: [10, 7], time: 1000},
-];
+] as const;
 
 const junctions: Junction[] = junctionsWithoutConnection.map(j => {
     return {
@@ -72,8 +72,8 @@ const junctions: Junction[] = junctionsWithoutConnection.map(j => {
     }
 });
 
-const start = <Junction>junctions.find(({id}) => id === 1);
-const end = <Junction>junctions.find(({id}) => id === 4);
+const start = junctions.find(({id}) => id === 1) as Junction;
+const end = junctions.find(({id}) => id === 4) as Junction;
 
 class RoadTrip extends AStar<Junction> {
     calculateDistanceBetweenNodes(a: Junction, b: Junction): number {
@@ -84,7 +84,7 @@ class RoadTrip extends AStar<Junction> {
         if (connection) {
             return connection.time
         } else {
-            throw "connection missing!"
+            throw "Error: These nodes are not directly connected.";
         }
     }
 
@@ -96,7 +96,7 @@ class RoadTrip extends AStar<Junction> {
         return node.connections.map((connection) => {
             const {otherId} = connection;
 
-            return <Junction>junctions.find(({id}) => id === otherId);
+            return junctions.find(({id}) => id === otherId) as Junction;
         });
     }
 
