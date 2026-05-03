@@ -1,21 +1,24 @@
 import AStar from "../../index";
 
-type Grid = number[][]
+type Grid = boolean[][];
 
-const x = 1;
+const X = false as const; // impassable
+const _ = true as const; // open
 const grid: Grid = [
-    [0,0,0,0,0,0,0,0,0,0,0],
-    [x,x,x,0,x,x,x,0,x,0,0],
-    [0,0,0,0,x,0,0,0,x,0,0],
-    [0,0,x,x,0,0,0,x,x,x,x],
-    [0,0,0,0,0,x,0,0,0,0,0]
+    [_,_,_,_,_,_,_,_,_,_,_],
+    [X,X,X,_,X,X,X,_,X,_,_],
+    [_,_,_,_,X,_,_,_,X,_,_],
+    [_,_,X,X,_,_,_,X,X,X,X],
+    [_,_,_,_,_,X,_,_,_,_,_]
 ];
 
-const start: N = {r: 0, c: 0};
-const end: N = {r: grid.length-1, c: grid[0].length-1};
+const start: N = {r: 0, c: 0}; // top left
+const end: N = {r: grid.length-1, c: grid[0].length-1}; // bottom right
 
 interface N {
+    // row
     r: number
+    // column
     c: number
 }
 
@@ -38,7 +41,7 @@ class Example extends AStar<N> {
         if (oldR < grid.length - 1 && oldC < grid[oldR].length) { out.push({r: oldR + 1, c: oldC + 1})}
 
         // filter out walls
-        return out.filter(({r, c}) => grid[r][c] !== 1);
+        return out.filter(({r, c}) => grid[r][c] !== X);
     }
 
     nodesMatch(a:N, b:N) {
