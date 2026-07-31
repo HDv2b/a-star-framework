@@ -1,4 +1,4 @@
-import AStar from "../../index";
+import AStar from "../../index.ts";
 
 interface JunctionWithoutConnection {
   id: number;

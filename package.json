@@ -2,7 +2,9 @@
   "name": "a-star-framework",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,5 +20,12 @@
     "globals": "^17.8.0",
     "prettier": "3.9.6",
     "typescript-eslint": "^8.65.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/index.js",
+      "node": "./dist/index.js"
+    }
   }
 }
