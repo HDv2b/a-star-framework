@@ -15,6 +15,10 @@ describe("DungeonSolver", () => {
     [_, _, _, _, _, X, _, _, _, _, _],
   ] as const;
 
+  if (grid.some((row) => row.length !== grid[0].length)) {
+    throw Error("Looks like the grid isn't rectangular");
+  }
+
   const start = { row: 0, col: 0 } as N; // top left
   const end = { row: grid.length - 1, col: grid[0].length - 1 } as N; // bottom right
 
