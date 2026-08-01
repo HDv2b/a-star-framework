@@ -1,4 +1,5 @@
 import { isFn } from "../utils/guards.ts";
+import MinHeap from "../utils/MinHeap.ts";
 
 /**
  * Internal wrapped node type used to keep track of parent nodes and cost functions.
@@ -23,12 +24,10 @@ interface WrappedN<N> {
  */
 export default abstract class AStar<N, Graph> {
   /**
-   * The open list of nodes to be evaluated. Will start with initial node, and have successors added to it. Should be
-   * sorted so that lowest F cost node is at the front.
-   *
-   * @todo: use a MinHeap for the open list for better performance
+   * The open list of nodes to be evaluated. Will start with initial node, and have successors added to it.
+   * Lowest f-cost is at top of the heap.
    */
-  #openList: WrappedN<N>[];
+  #openList: MinHeap<WrappedN<N>>;
   /**
    * The closed list of nodes already evaluated and deemed redundant (known to not be on the most optimal route).
    * @todo: use Set?
@@ -42,7 +41,10 @@ export default abstract class AStar<N, Graph> {
   ) => void;
 
   constructor() {
-    this.#openList = [];
+    this.#openList = new MinHeap(
+      (a: WrappedN<N>, b: WrappedN<N>) => a.f - b.f, // lowest f-cost to the top
+      (node) => JSON.stringify(node.node),
+    );
     this.#closedList = [];
   }
 
@@ -105,9 +107,7 @@ export default abstract class AStar<N, Graph> {
    * @private
    */
   #findNodeInOpenList(node: N) {
-    return this.#openList.find((openNode) =>
-      this.nodesMatch(openNode.node, node),
-    );
+    return this.#openList.get(JSON.stringify(node));
   }
 
   /**
@@ -126,15 +126,12 @@ export default abstract class AStar<N, Graph> {
   }
 
   /**
-   * Add a node to the open list and sort it by F cost.
-   *
-   * @todo: Use minHeap as open list for better performance method for keeping lowest F at the top.
+   * Add a node to the open list with lowest F-cost at top of the heap.
    * @param wrappedNode
    * @private
    */
   #addToOpenList(wrappedNode: WrappedN<N>) {
     this.#openList.push(wrappedNode);
-    this.#openList.sort((a, b) => a.f - b.f);
     if (this.#handleAnimation) {
       this.#handleAnimation("added node to open list", wrappedNode.node);
     }
@@ -156,8 +153,8 @@ export default abstract class AStar<N, Graph> {
    * Take the node with the lowest F cost from the open list, i.e. the most promising node to explore next.
    * @private
    */
-  #spliceLowestF() {
-    return this.#openList.splice(0, 1)[0];
+  #popLowestF(): WrappedN<N> | undefined {
+    return this.#openList.popMin();
   }
 
   /**
@@ -191,7 +188,10 @@ export default abstract class AStar<N, Graph> {
       meta?: { parent: N; f: number; g: number; h: number },
     ) => void,
   ): N[] | null {
-    this.#openList = [];
+    this.#openList = new MinHeap(
+      (a: WrappedN<N>, b: WrappedN<N>) => a.f - b.f,
+      (node) => JSON.stringify(node.node),
+    );
     this.#closedList = [];
 
     if (handleAnimation) {
@@ -204,8 +204,12 @@ export default abstract class AStar<N, Graph> {
 
     this.#addToOpenList({ node: startNode, f: 0, g: 0 });
 
-    while (this.#openList.length > 0) {
-      const q = this.#spliceLowestF();
+    while (this.#openList.size > 0) {
+      const q = this.#popLowestF();
+      if (!q) {
+        break;
+      }
+
       if (nodeIsTargetDestination(q.node)) {
         // success!
         return this.#createFinalPath(q);
