@@ -21,8 +21,8 @@ these are the blanks you will need to fill in!
 
 You can follow along while looking at the following examples:
 
-- Grid-based layout: [dungeon example](./src/example/dungeon/index.ts)
-- Network or graph layout: [roadtrip example](./src/example/roadtrip/roadtrip.ts)
+- Grid-based layout: [dungeon example](src/inheritance/example/dungeon/DungeonSolver.ts)
+- Network or graph layout: [roadtrip example](src/inheritance/example/roadtrip/RoadTripSolver.ts)
 
 ### Shaping the node
 
@@ -43,7 +43,7 @@ In the roadtrip example, each connection and travel cost is explicitly listed.
 - `abstract generateSuccessors(node: N): N[]`: for a given node, produce a list of adjacent nodes. You don't need to filter
   out nodes already travelled through, this will be taken care of.
 
-- `abstract nodesMatch(a: N, b: N): Boolean`: Simply defines if two nodes are the same, e.g. same row and column number.
+- `abstract nodesMatch(a: N, b: N): boolean`: Simply defines if two nodes are the same, e.g. same row and column number.
 
 - `abstract calculateDistanceBetweenNodes(a: N, b: N): number`: The real distance cost between two nodes.
 

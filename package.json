@@ -6,16 +6,19 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --experimental-test-coverage --test",
+    "format": "prettier -w ./",
+    "lint": "pnpm dlx eslint"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.2",
     "eslint": "^10.8.0",
     "globals": "^17.8.0",
     "prettier": "3.9.6",

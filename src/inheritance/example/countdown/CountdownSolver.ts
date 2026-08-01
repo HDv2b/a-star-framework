@@ -1,21 +1,8 @@
-import AStar from "../../index.ts";
+import AStar from "../../AStar.ts";
+import { type N } from "./types.ts";
 
-interface N {
-  availableNumbers: number[];
-  lastAction?: {
-    generated: number;
-    operation: "times" | "add" | "subtract" | "divide";
-    numbers: [number, number];
-    idxs: [number, number];
-  };
-}
-
-const numbers = [100, 50, 2, 1, 10, 25];
-
-const target = 300;
-
-class Index extends AStar<N> {
-  calculateDistanceBetweenNodes(a: N, b: N): number {
+export default class CountdownSolver extends AStar<N, []> {
+  calculateDistanceBetweenNodes(): number {
     return 1;
   }
 
@@ -108,7 +95,7 @@ class Index extends AStar<N> {
     return successors;
   }
 
-  nodesMatch(a: N, b: N): Boolean {
+  nodesMatch(a: N, b: N): boolean {
     a.availableNumbers.sort((a, b) => a - b);
     b.availableNumbers.sort((a, b) => a - b);
 
@@ -118,10 +105,3 @@ class Index extends AStar<N> {
     );
   }
 }
-
-const countdownNumbers = new Index();
-const solution = countdownNumbers.solve({ availableNumbers: numbers }, (node) =>
-  node.availableNumbers.includes(target),
-);
-
-console.log(solution);

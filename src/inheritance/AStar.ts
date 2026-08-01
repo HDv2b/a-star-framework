@@ -1,3 +1,5 @@
+import { isFn } from "../utils/guards.ts";
+
 /**
  * Internal wrapped node type used to keep track of parent nodes and cost functions.
  *
@@ -12,8 +14,6 @@ interface WrappedN<N> {
   h?: number; // estimated cost from this node to goal
 }
 
-const isFn = (a: unknown): a is Function => typeof a === "function";
-
 /**
  * Abstract A* pathfinding class.
  * @todo how to use
@@ -21,7 +21,7 @@ const isFn = (a: unknown): a is Function => typeof a === "function";
  * @example
  *    @todo...
  */
-export default abstract class AStar<N> {
+export default abstract class AStar<N, Graph> {
   /**
    * The open list of nodes to be evaluated. Will start with initial node, and have successors added to it. Should be
    * sorted so that lowest F cost node is at the front.
@@ -34,6 +34,7 @@ export default abstract class AStar<N> {
    * @todo: use Set?
    */
   #closedList: WrappedN<N>[];
+
   #handleAnimation?: (
     action: string,
     node: N,
@@ -49,15 +50,16 @@ export default abstract class AStar<N> {
    * For given node, generate all valid successor nodes that can be reached from it. I.e.: all adjacent tiles in a
    * grid,or all directly connected junctions in a road map.
    * @param node
+   * @param graph
    */
-  abstract generateSuccessors(node: N): N[];
+  abstract generateSuccessors(node: N, graph: Graph): N[];
 
   /**
    * Determine whether two nodes are equivalent (i.e. represent the same location in the search space).
    * @param a
    * @param b
    */
-  abstract nodesMatch(a: N, b: N): Boolean;
+  abstract nodesMatch(a: N, b: N): boolean;
 
   /**
    * Calculate the true cost to move from node a to node b.
@@ -80,9 +82,9 @@ export default abstract class AStar<N> {
    *     }
    *
    * @param currentNode - The current node for which to calculate the heuristic.
-   *
+   * @param endNode
    */
-  abstract calculateH(currentNode: N): number;
+  abstract calculateH(currentNode: N, endNode?: N): number;
 
   /**
    * Node is still good to be evaluated (not in closed list).
@@ -174,11 +176,13 @@ export default abstract class AStar<N> {
    *             ii. If not on the open list, add to open list, store the current node as the parent for this adjacent node, and calculate the             F,G, H costs of the adjacent node.
    *             iii. If on the open list, compare the G costs of this path to the node and the old path to the node. If the G cost of using the             current node to get to the node is the lower cost, change the parent node of the adjacent node to the current node.             Recalculate F,G,H costs of the node.
    * 3. If open list is empty, fail.
+   * @param graph
    * @param startNode
    * @param goalNodeObjOrFnc
    * @param handleAnimation
    */
   solve(
+    graph: Graph,
     startNode: N,
     goalNodeObjOrFnc: ((node: N) => boolean) | N,
     handleAnimation?: (
@@ -186,7 +190,7 @@ export default abstract class AStar<N> {
       node: N,
       meta?: { parent: N; f: number; g: number; h: number },
     ) => void,
-  ) {
+  ): N[] | null {
     this.#openList = [];
     this.#closedList = [];
 
@@ -194,7 +198,7 @@ export default abstract class AStar<N> {
       this.#handleAnimation = handleAnimation;
     }
 
-    const nodeIsTargetDestination = isFn(goalNodeObjOrFnc)
+    const nodeIsTargetDestination = isFn<N>(goalNodeObjOrFnc)
       ? (node: N) => goalNodeObjOrFnc(node)
       : (node: N) => this.nodesMatch(node, goalNodeObjOrFnc);
 
@@ -208,11 +212,13 @@ export default abstract class AStar<N> {
       }
 
       this.#addToClosedList(q);
-      this.generateSuccessors(q.node)
+      this.generateSuccessors(q.node, graph)
         .filter((node) => this.#nodeIsNotInClosedList(node))
         .map((node) => {
           const g = q.g + this.calculateDistanceBetweenNodes(q.node, node);
-          const h = this.calculateH(node);
+          const h = isFn<N>(goalNodeObjOrFnc)
+            ? this.calculateH(node)
+            : this.calculateH(node, goalNodeObjOrFnc);
           const f = g + h;
 
           if (this.#handleAnimation) {
