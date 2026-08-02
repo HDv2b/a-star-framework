@@ -3,9 +3,6 @@ import MinHeap from "../utils/MinHeap.ts";
 
 /**
  * Internal wrapped node type used to keep track of parent nodes and cost functions.
- *
- * @todo maybe use branded types here to prevent mixing different node types or cost units (eg. time vs distance)
- *      or leave that up to user in their implementations?
  */
 interface WrappedN<N> {
   node: N;
@@ -76,7 +73,6 @@ export default abstract class AStar<N, Graph> {
    *
    * @remarks
    * If H is of a different unit to F (eg distance vs time) then there will be trouble!
-   * @todo type branding to prevent different H and F units
    *
    * @example
    *     calculateH(currentNode: N): number {
