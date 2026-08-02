@@ -5,12 +5,12 @@ import MinHeap from "../utils/MinHeap.ts";
  * Internal wrapped node type used to keep track of parent nodes and cost functions.
  */
 interface WrappedN<N> {
-  node: N;
-  parent?: WrappedN<N>;
-  f: number; // total cost function (f = g + h)
-  g: number; // known true cost from start to this node
-  h?: number; // estimated cost from this node to goal
-  // todo: consider adding an id and using that, might be cheaper and safer than using json.stringify
+  readonly node: N;
+  readonly parent?: WrappedN<N>;
+  readonly f: number; // total cost function (f = g + h)
+  readonly g: number; // known true cost from start to this node
+  readonly h?: number; // estimated cost from this node to goal
+  readonly id: number; // internal identity used for heap and set lookups
 }
 
 /**
@@ -29,7 +29,8 @@ export default abstract class AStar<N, Graph> {
   /**
    * The closed list of nodes already evaluated and deemed redundant (known to not be on the most optimal route).
    */
-  #closedList: Set<string>;
+  #closedList: WrappedN<N>[];
+  #nextNodeId = 0;
 
   #handleAnimation?: (
     action: string,
@@ -40,9 +41,17 @@ export default abstract class AStar<N, Graph> {
   constructor() {
     this.#openList = new MinHeap(
       (a: WrappedN<N>, b: WrappedN<N>) => a.f - b.f, // lowest f-cost to the top
-      (node) => JSON.stringify(node.node),
+      (wrappedNode) => wrappedNode.id,
     );
-    this.#closedList = new Set();
+    this.#closedList = [];
+  }
+
+  /**
+   * Create a stable internal identifier for a wrapped node.
+   * @private
+   */
+  #createNodeId(): number {
+    return this.#nextNodeId++;
   }
 
   /**
@@ -90,16 +99,18 @@ export default abstract class AStar<N, Graph> {
    * @private
    */
   #nodeIsNotInClosedList(node: N): boolean {
-    return !this.#closedList.has(JSON.stringify(node));
+    return this.#closedList.every(
+      (closedNode) => !this.nodesMatch(closedNode.node, node),
+    );
   }
 
   /**
    * Find a node in the open list.
-   * @param node
    * @private
+   * @param wrappedNode
    */
-  #findNodeInOpenList(node: N) {
-    return this.#openList.get(JSON.stringify(node));
+  #findNodeInOpenList(wrappedNode: WrappedN<N>) {
+    return this.#openList.get(wrappedNode.id);
   }
 
   /**
@@ -135,7 +146,7 @@ export default abstract class AStar<N, Graph> {
    * @private
    */
   #addToClosedList(wrappedNode: WrappedN<N>) {
-    this.#closedList.add(JSON.stringify(wrappedNode));
+    this.#closedList.push(wrappedNode);
     if (this.#handleAnimation) {
       this.#handleAnimation("moved node to closed list", wrappedNode.node);
     }
@@ -182,9 +193,9 @@ export default abstract class AStar<N, Graph> {
   ): N[] | null {
     this.#openList = new MinHeap(
       (a: WrappedN<N>, b: WrappedN<N>) => a.f - b.f,
-      (node) => JSON.stringify(node.node),
+      (wrappedNode) => wrappedNode.id,
     );
-    this.#closedList.clear();
+    this.#closedList = [];
 
     if (handleAnimation) {
       this.#handleAnimation = handleAnimation;
@@ -194,7 +205,12 @@ export default abstract class AStar<N, Graph> {
       ? (node: N) => goalNodeObjOrFnc(node)
       : (node: N) => this.nodesMatch(node, goalNodeObjOrFnc);
 
-    this.#addToOpenList({ node: startNode, f: 0, g: 0 });
+    this.#addToOpenList({
+      node: startNode,
+      f: 0,
+      g: 0,
+      id: this.#createNodeId(),
+    });
 
     while (this.#openList.size > 0) {
       const q = this.#popLowestF();
@@ -232,12 +248,11 @@ export default abstract class AStar<N, Graph> {
             f,
             g,
             h,
+            id: this.#createNodeId(),
           };
         })
         .forEach((wrappedChildNode) => {
-          const nodeInOpenList = this.#findNodeInOpenList(
-            wrappedChildNode.node,
-          );
+          const nodeInOpenList = this.#findNodeInOpenList(wrappedChildNode);
           if (!nodeInOpenList) {
             this.#addToOpenList(wrappedChildNode);
           } else {
