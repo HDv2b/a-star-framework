@@ -96,12 +96,11 @@ export default class CountdownSolver extends AStar<N, []> {
   }
 
   nodesMatch(a: N, b: N): boolean {
-    a.availableNumbers.sort((a, b) => a - b);
-    b.availableNumbers.sort((a, b) => a - b);
-
     return (
       a.availableNumbers.length === b.availableNumbers.length &&
-      a.availableNumbers.every((n, i) => b.availableNumbers[i] === n)
+      a.availableNumbers
+        .toSorted((a, b) => a - b)
+        .every((n, i) => b.availableNumbers.toSorted((a, b) => a - b)[i] === n)
     );
   }
 }
