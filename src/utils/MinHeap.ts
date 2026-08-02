@@ -1,10 +1,12 @@
+type HeapKey = string | number;
+
 class MinHeap<T> {
   #data: T[] = [];
-  #keyMap?: Map<number, T>;
+  #keyMap?: Map<HeapKey, T>;
   #compare: (a: T, b: T) => number;
-  #keyFn?: (item: T) => number;
+  #keyFn?: (item: T) => HeapKey;
 
-  constructor(compare: (a: T, b: T) => number, keyFn?: (item: T) => number) {
+  constructor(compare: (a: T, b: T) => number, keyFn?: (item: T) => HeapKey) {
     this.#compare = compare;
     this.#keyFn = keyFn;
     if (keyFn) {
@@ -72,7 +74,7 @@ class MinHeap<T> {
     return this.#data[0];
   }
 
-  get(key: number): T | undefined {
+  get(key: HeapKey): T | undefined {
     return this.#keyMap?.get(key);
   }
 

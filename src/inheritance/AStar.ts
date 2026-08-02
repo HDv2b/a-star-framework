@@ -6,11 +6,11 @@ import MinHeap from "../utils/MinHeap.ts";
  */
 interface WrappedN<N> {
   readonly node: N;
-  readonly parent?: WrappedN<N>;
-  readonly f: number; // total cost function (f = g + h)
-  readonly g: number; // known true cost from start to this node
-  readonly h?: number; // estimated cost from this node to goal
-  readonly id: number; // internal identity used for heap and set lookups
+  parent?: WrappedN<N>;
+  f: number; // total cost function (f = g + h)
+  g: number; // known true cost from start to this node
+  h?: number; // estimated cost from this node to goal
+  readonly id: string | number; // internal identity used for heap and set lookups
 }
 
 /**
@@ -30,7 +30,6 @@ export default abstract class AStar<N, Graph> {
    * The closed list of nodes already evaluated and deemed redundant (known to not be on the most optimal route).
    */
   #closedList: WrappedN<N>[];
-  #nextNodeId = 0;
 
   #handleAnimation?: (
     action: string,
@@ -47,14 +46,6 @@ export default abstract class AStar<N, Graph> {
   }
 
   /**
-   * Create a stable internal identifier for a wrapped node.
-   * @private
-   */
-  #createNodeId(): number {
-    return this.#nextNodeId++;
-  }
-
-  /**
    * For given node, generate all valid successor nodes that can be reached from it. I.e.: all adjacent tiles in a
    * grid,or all directly connected junctions in a road map.
    * @param node
@@ -63,11 +54,22 @@ export default abstract class AStar<N, Graph> {
   abstract generateSuccessors(node: N, graph: Graph): N[];
 
   /**
-   * Determine whether two nodes are equivalent (i.e. represent the same location in the search space).
-   * @param a
-   * @param b
+   * Determine whether two nodes are equivalent (i.e. represent the same location in the search space). Default to using
+   * `id` field of the node, or else requires being overridden by the user to generate a unique key.
+   * @param node
    */
-  abstract nodesMatch(a: N, b: N): boolean;
+  protected identifyNode(node: N): string | number {
+    if (typeof node === "object" && node !== null && "id" in node) {
+      const id = (node as { id?: unknown }).id;
+      if (typeof id === "string" || typeof id === "number") {
+        return id;
+      }
+    }
+
+    throw new Error(
+      "You must either provide a unique `id` field in your node interface, or else override AStar.identifyNode() with a custom function to generate a unique ID. Please see examples provided.",
+    );
+  }
 
   /**
    * Calculate the true cost to move from node a to node b.
@@ -100,7 +102,7 @@ export default abstract class AStar<N, Graph> {
    */
   #nodeIsNotInClosedList(node: N): boolean {
     return this.#closedList.every(
-      (closedNode) => !this.nodesMatch(closedNode.node, node),
+      (closedNode) => !this.#nodesMatch(closedNode.node, node),
     );
   }
 
@@ -160,6 +162,10 @@ export default abstract class AStar<N, Graph> {
     return this.#openList.popMin();
   }
 
+  #nodesMatch(a: N, b: N): boolean {
+    return this.identifyNode(a) === this.identifyNode(b);
+  }
+
   /**
    * Solve the path from startNode to either EndNode or verifier function using the A* algorithm.
    *
@@ -203,13 +209,13 @@ export default abstract class AStar<N, Graph> {
 
     const nodeIsTargetDestination = isFn<N>(goalNodeObjOrFnc)
       ? (node: N) => goalNodeObjOrFnc(node)
-      : (node: N) => this.nodesMatch(node, goalNodeObjOrFnc);
+      : (node: N) => this.#nodesMatch(node, goalNodeObjOrFnc);
 
     this.#addToOpenList({
       node: startNode,
       f: 0,
       g: 0,
-      id: this.#createNodeId(),
+      id: this.identifyNode(startNode),
     });
 
     while (this.#openList.size > 0) {
@@ -248,7 +254,7 @@ export default abstract class AStar<N, Graph> {
             f,
             g,
             h,
-            id: this.#createNodeId(),
+            id: this.identifyNode(node),
           };
         })
         .forEach((wrappedChildNode) => {

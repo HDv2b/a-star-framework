@@ -39,8 +39,8 @@ export default class DungeonSolver extends AStar<N, Grid> {
     return out.filter(({ row, col }) => grid[row][col]);
   }
 
-  nodesMatch(a: N, b: N): boolean {
-    return a.col === b.col && a.row === b.row;
+  identifyNode(node: N): string | number {
+    return `${node.row}:${node.col}`;
   }
 
   calculateDistanceBetweenNodes(a: N, b: N): number {

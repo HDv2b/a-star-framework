@@ -16,10 +16,6 @@ export default class RoadTripSolver extends AStar<
     });
   }
 
-  nodesMatch(a: Junction, b: Junction): boolean {
-    return a.id === b.id;
-  }
-
   calculateDistanceBetweenNodes(a: Junction, b: Junction): number {
     if (a.id === b.id) {
       return 0;
