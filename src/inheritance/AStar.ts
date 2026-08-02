@@ -13,6 +13,7 @@ interface WrappedN<N> {
   f: number; // total cost function (f = g + h)
   g: number; // known true cost from start to this node
   h?: number; // estimated cost from this node to goal
+  // todo: consider adding an id and using that, might be cheaper and safer than using json.stringify
 }
 
 /**
@@ -30,9 +31,8 @@ export default abstract class AStar<N, Graph> {
   #openList: MinHeap<WrappedN<N>>;
   /**
    * The closed list of nodes already evaluated and deemed redundant (known to not be on the most optimal route).
-   * @todo: use Set?
    */
-  #closedList: WrappedN<N>[];
+  #closedList: Set<string>;
 
   #handleAnimation?: (
     action: string,
@@ -45,7 +45,7 @@ export default abstract class AStar<N, Graph> {
       (a: WrappedN<N>, b: WrappedN<N>) => a.f - b.f, // lowest f-cost to the top
       (node) => JSON.stringify(node.node),
     );
-    this.#closedList = [];
+    this.#closedList = new Set();
   }
 
   /**
@@ -94,11 +94,7 @@ export default abstract class AStar<N, Graph> {
    * @private
    */
   #nodeIsNotInClosedList(node: N): boolean {
-    return (
-      this.#closedList.findIndex((closedNode) =>
-        this.nodesMatch(closedNode.node, node),
-      ) === -1
-    );
+    return !this.#closedList.has(JSON.stringify(node));
   }
 
   /**
@@ -143,7 +139,7 @@ export default abstract class AStar<N, Graph> {
    * @private
    */
   #addToClosedList(wrappedNode: WrappedN<N>) {
-    this.#closedList.push(wrappedNode);
+    this.#closedList.add(JSON.stringify(wrappedNode));
     if (this.#handleAnimation) {
       this.#handleAnimation("moved node to closed list", wrappedNode.node);
     }
@@ -192,7 +188,7 @@ export default abstract class AStar<N, Graph> {
       (a: WrappedN<N>, b: WrappedN<N>) => a.f - b.f,
       (node) => JSON.stringify(node.node),
     );
-    this.#closedList = [];
+    this.#closedList.clear();
 
     if (handleAnimation) {
       this.#handleAnimation = handleAnimation;
